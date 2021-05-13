@@ -2,6 +2,7 @@
 Four step complex analysis with plotting the results
 
 ###########################################################################
+
 Required input datasets
 mp_traits_dir - directory to csv comma divided file with quantitative traits for each line and phenotype
 (column names: phenotype/epiRILs; row names: lines)
