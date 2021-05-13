@@ -1,8 +1,7 @@
 # QTL-analysis-arabidopsis
 Four step complex analysis with plotting the results
 
-###############################################################################################################################
-
+###########################################################################
 Required input datasets
 mp_traits_dir - directory to csv comma divided file with quantitative traits for each line and phenotype
 (column names: phenotype/epiRILs; row names: lines)
@@ -17,7 +16,7 @@ marker_dir - directory to csv comma divided file with marker chromosome and star
 positions_dir - directory to csv comma divided file with phenotype (epiRIL positions)
 (column names: name, chr, start, end)
 
-###############################################################################################################################
+###########################################################################
 
 Functions overview
 mapping_qtl function (required datasets: mp_traits_dir, gc_genotype_dir, marker_dir)
