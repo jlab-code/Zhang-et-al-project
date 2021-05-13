@@ -7,15 +7,37 @@ library(ggplot2)
 library(reshape2)
 library(stringr)
 
+#-----------------------------------------------------------------------------
+# Required input datasets
+#-----------------------------------------------------------------------------
+# mp_traits_dir - directory to csv comma divided file with quantitative traits for each line and phenotype
+# (column names: phenotype/epiRILs; row names: lines)
+#-----------------------------------------------------------------------------
+# gc_genotype_dir - directory to csv comma divided file with epigenotype profile (M/U) for each epimarker and line
+# (column names: epimarkers; row names: lines)
+# first row: chromosome for a given marker
+#-----------------------------------------------------------------------------
+# marker_dir - directory to csv comma divided file with marker chromosome and start-end positions
+# (column names: marker, chr, start, end)
+#-----------------------------------------------------------------------------
+# positions_dir - directory to csv comma divided file with phenotype (epiRIL positions)
+# (column names: name, chr, start, end)
+#-----------------------------------------------------------------------------
+
+##### mapping_qtl function #####
+# mapping_qtl - perform preprocessing of the data (based on the log transformation and preparing datasets for QTL analysis)
+#             - perform a mappinh and permutations (QTL analysis)
+#             - calculate genotype probabilites and map
+#             - calculate effect direction (phenotype ~ epigenotype)
 mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
 {
-  # Step a: Read required dataset for phenotypes (mp_traits), genotype map (gc_genotype) and marker map (markers_info)
+  # Step 1: Read required dataset for phenotypes (mp_traits), genotype map (gc_genotype) and marker map (markers_info)
   
   mp_traits <- fread(mp_traits_dir, header = TRUE)
   gc_genotype <- read.csv(gc_genotype_dir)
   markers_info <- fread(marker_dir)
   
-  # Step b: Organize the data by the unique IDs of the lines (it should match trait and genotype datasets) 
+  # Step 2: Organize the data by the unique IDs of the lines (it should match trait and genotype datasets) 
   
   IDs <- gc_genotype$ID[-1]
   for (i in 1:8)
@@ -44,7 +66,7 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
   mp_traits <- as.matrix(mp_traits)
   
   
-  # Step c: Make log transformation of the data and save if it is closer to normal distribution 
+  # Step 3: Make log transformation of the data and save if it is closer to normal distribution 
   #         (evaluation is done by checking the Shapiro Wilk's p-value - if it is higher after transformation, it is saved to the dataset)
   
   for (i in 2:dim(mp_traits)[2])
@@ -62,15 +84,15 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
   }
   mp_traits <- as.data.frame(mp_traits)
   
-  # Step d: Save datasets for mapping in output.dir directory
+  # Step 4: Save datasets for mapping in output.dir directory
   
   fwrite(mp_traits, paste(output.dir, 'mp_traits_log_nm.csv', sep = ""))
   fwrite(gc_genotype, paste(output.dir, 'gc_genotype_log_nm.csv', sep = ""))
   
-  # Step e: Set the vector of phenotypic traits
+  # Step 5: Set the vector of phenotypic traits
   traits <- setdiff(traits, "ID")
   
-  # Step f: Perform a crossing between phenotypes and genotypes used for the analysis
+  # Step 6: Perform a crossing between phenotypes and genotypes used for the analysis
   qtl.data<-read.cross("csvs",
                        dir = "", 
                        genfile = paste(output.dir, 'gc_genotype_log_nm.csv', sep = ""), 
@@ -79,11 +101,11 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
                        na.string=c("NA"), 
                        estimate.map=T)
   
-  # Step g: Calculate conditional genotype probabilities
+  # Step 7: Calculate conditional genotype probabilities
   qtl.data<-calc.genoprob(qtl.data, step=2, off.end=0, error.prob=0,
                           map.function=c("haldane"), stepwidth=c("fixed"))
   
-  # Step h: Set the number of permutations and perform a permutation test
+  # Step 8: Set the number of permutations and perform a permutation test
   n.perm <- 1000
   out.perm<-scanone(qtl.data, pheno.col=traits, model="normal",
                     method="hk", use="all.obs", addcovar=NULL, intcovar=NULL, weights=NULL,
@@ -91,14 +113,14 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
                     tol=1e-4, n.perm=n.perm, perm.Xsp=FALSE, perm.strata=NULL, verbose=T,
                     batchsize=250, n.cluster=1)
   
-  # Step i: Perform a mapping procedure
+  # Step 9: Perform a mapping procedure
   out.inter<-scanone(qtl.data, pheno.col=traits, model="normal",
                      method="hk", use="all.obs", addcovar=NULL, intcovar=NULL, weights=NULL,
                      upper=FALSE, ties.random=FALSE, start=NULL, maxit=4000,
                      tol=1e-4, perm.Xsp=FALSE, perm.strata=NULL, verbose=T,
                      batchsize=250, n.cluster=1)
   
-  # Step j: Make a genotype dataframe (AA -> 1, AB -> 2)
+  # Step 10: Make a genotype dataframe (AA -> 1, AB -> 2)
   prob.geno<-cbind(
     round(qtl.data$geno$`1`$prob[,,"AB"], 0) + 1,
     round(qtl.data$geno$`2`$prob[,,"AB"], 0) + 1,
@@ -106,10 +128,10 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
     round(qtl.data$geno$`4`$prob[,,"AB"], 0) + 1,
     round(qtl.data$geno$`5`$prob[,,"AB"], 0) + 1)
   
-  # Step k: Pull out the phenotypes from crossing 
+  # Step 11: Pull out the phenotypes from crossing 
   pheno<-pull.pheno(qtl.data)
   
-  # Step l: Calculate effect direction based on the linear model between the vector of epigenotypes and phenotypes for
+  # Step 12: Calculate effect direction based on the linear model between the vector of epigenotypes and phenotypes for
   #          a given phenotype - marker association (-1 - negative, +1 - positive)
   effect.direction<-matrix(,nrow=dim(out.inter)[1], ncol=dim(out.inter)[2]-2)
   
@@ -133,7 +155,7 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
   colnames(effect.direction)<-traits
   rownames(effect.direction)<-rownames(out.inter)
   
-  # Step m: Make a dataset with cM position for further analysis
+  # Step 13: Make a dataset with cM position for further analysis
   chr.numbers<-as.numeric(names(nmar(qtl.data)))
   fullmap.info<-NULL
   for (a in 1:length(chr.numbers))
@@ -150,7 +172,7 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
   names(fullmap.info)<-as.numeric(chr.numbers) 
   
   
-  # Step n: Save all of the datasets
+  # Step 14: Save all of the datasets
   ## Reading out the effect direction
   dput(effect.direction, paste(output.dir, "QTL-direction-data-all-traits_log_nm.Rdata", sep = ''))
   ## Reading out the reference data
@@ -162,23 +184,27 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
   ## Reading out the full map info
   dput(fullmap.info, paste(output.dir, "SCANPOSINFO-all-traits_log_nm.Rdata", sep = ''))
 }
+
+##### getQTLpeaks_new function #####
+# getQTLpeaks_new - select a significant peaks with a given alpha level
 getQTLpeaks_new<-function(input.dir, alpha = 0.05)
 {
-  # Step a: Read required dataset for reference genome, permutation data, mapping data, marker positions and effect direcion
+  # Step 1: Read required dataset for reference genome, permutation data, mapping data, marker positions and effect direcion
   ref.data<-dget(paste(input.dir, "REF-data-all-traits_log_nm.Rdata", sep="")) #the traits were inputted incorrectly
   perm.data<-dget(paste(input.dir, "PERM-all-traits_log_nm.Rdata", sep="")) #permutation results dataframe
   qtl.data<-dget(paste(input.dir, "QTL-mapping-all-traits_log_nm.Rdata", sep="")) #mapping results dataframe
   marker.pos<-read.csv(paste(input.dir, marker_dir, sep = ""), header=T) #marker positions dataset
   qtl.direction<-dget(paste(input.dir, "QTL-direction-data-all-traits_log_nm.Rdata", sep="")) #effect direction dataset
-  # Step b: Select permutation threshold for each trait separately
+  
+  # Step 2: Select permutation threshold for each trait separately
   perm.thresh<-summary(perm.data, alpha=alpha)
-  # Step c: Pull out map necessary datasets
+  # Step 3: Pull out map necessary datasets
   map.info<-pull.map(ref.data, as.table=T) #pull out genotype map (with cM positions)
   chr.in<-as.character(unique(qtl.data[,1])) #pull out chromosome unique set
   trait.in<-colnames(perm.thresh) #pull out phenotypic traits
   peaks.collect<-NULL
   peaks.new<-NULL
-  # Step d: For each phenotypic trait for each chromosome separately find a peak
+  # Step 4: For each phenotypic trait for each chromosome separately find a peak
   for (a in 1:length(trait.in))
   {
     perm.temp<-perm.thresh[, which(colnames(perm.thresh) == trait.in[a])]
@@ -233,9 +259,12 @@ getQTLpeaks_new<-function(input.dir, alpha = 0.05)
   colnames(peaks.new)[4]<-"pos.cM"
   return(peaks.new)
 }
+
+##### qtlpeaks.plot function #####
+# qtlpeaks.plot - plot a LOD score thresholds for the peaks selected in getQTLpeaks_new
 qtlpeaks.plot <- function(input.dir, marker_dir)
 {
-  # Step a. Load required datasets
+  # Step 1. Load required datasets
   out.inter <- dget(paste(input.dir, "QTL-mapping-all-traits_log_nm.Rdata", sep = "")) #data after scanone function with LOD values
   perm.data <- dget(paste(input.dir, "PERM-all-traits_log_nm.Rdata", sep="")) #permutation data used for selecting threshold for LOD values as significant
   marker_data <- fread(marker_dir) #marker bp positions
@@ -273,30 +302,30 @@ qtlpeaks.plot <- function(input.dir, marker_dir)
     chromosome_info_bp$x[element] <- sum(chromosome_info_bp_element)
   }
   
-  # Step b. Data manipulation
+  # Step 2. Data manipulation
   colnames(out.inter) <- c("chr", "position", colnames(out.inter)[-c(1,2)]) #name the columns (optional)
   out.inter$marker <- rownames(out.inter) #add information about marker as the column
   lods_info <- melt(out.inter, id.vars=c("chr", "position", "marker")) #extract from the scanone object the chromosome, position and marker
   
-  # Step c. Calculate the threshold using permutation dataset
+  # Step 3. Calculate the threshold using permutation dataset
   perm.thresh<-summary(perm.data, alpha=0.05) #calculate threshold
   perm.thresh <- data.frame(trait = colnames(out.inter)[-c(1,2, length(colnames(out.inter)))],
                             threshold = as.vector(perm.thresh)) #make a dataframe (optional)
   
-  # Step d. Calculate on the basis of the treshhold new LOD value
+  # Step 4. Calculate on the basis of the treshhold new LOD value
   lods_info$new_value <- NA
   for (element in 1:dim(lods_info)[1])
   {
     lods_info$new_value[element] <- lods_info$value[element] / perm.thresh$threshold[which(perm.thresh$trait == lods_info$variable[element])]
   }
   
-  # Step e. Modify pericentrometric file by adding info about y axes in the plot
+  # Step 5. Modify pericentrometric file by adding info about y axes in the plot
   peri_info_bp <- data.frame(chr = pericentrometric_info$chr, 
                              xmin = pericentrometric_info$start, 
                              xmax = pericentrometric_info$end,
                              ymin = - Inf, ymax = +Inf)
   
-  # Step f. Delete from the dataset the information about pseudomarkers and
+  # Step 6. Delete from the dataset the information about pseudomarkers and
   #         add the information about real markers position in bp
   lods_info_nopseudo <-   lods_info[lods_info$marker %like% "MM",] #delete pseudomarkers
   marker_data$mid <- 0.5*(marker_data$start + marker_data$end) #calculate mid value position for markers
@@ -306,14 +335,15 @@ qtlpeaks.plot <- function(input.dir, marker_dir)
     lods_info_nopseudo$position_bp[i] <- marker_data$mid[which(marker_data$marker == lods_info_nopseudo$marker[i])]
   }
   
-  # Step g. Add values from bp
+  # Step 7. Add values from bp
   for (element in 1:dim(lods_info_nopseudo)[1])
   {
     lods_info_nopseudo$position_bp[element] <- lods_info_nopseudo$position_bp[element] + add_chromosome_bp$add.x[which(add_chromosome_bp$chr.marker == lods_info_nopseudo$chr[element])]
   }
   pericentrometric_info_bp$chr <- pericentrometric_info_bp$chr.marker
   chromosome_info_bp$chr <- chromosome_info_bp$chr.marker
-  # Step h. Make a final plot
+  
+  # Step 8. Make a final plot
   alog_nm <- ggplot(data=lods_info_nopseudo) +
     geom_line(aes(x=position_bp, y=new_value, color = variable), size = 0.6) +
     ggtitle('epiRILs phenotypes') +
@@ -332,9 +362,12 @@ qtlpeaks.plot <- function(input.dir, marker_dir)
     theme(strip.background = element_blank())
   return(alog_nm)
 }
+
+##### transcis.plot function #####
+# transcis.plot - plot a LOD score thresholds for the peaks selected in getQTLpeaks_new
 transcis.plot <- function(input.dir, marker_dir, positions_dir)
 {
-  # Step a. Load required datasets
+  # Step 1: Load required datasets
   peaks_NAD_data <- fread(paste(input.dir, 'info_peaks_log_nm.csv', sep = '')) #information about peaks from NAD regions
   marker_data <- fread(marker_dir) #marker bp positions
   phenotype_positions <- fread(positions_dir)
@@ -357,7 +390,7 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
                                       start = c(9698788, 0, 7298763, 0, 6999996),
                                       end = c(19897560, 9492918, 18289014, 9150003, 17332770))
   
-  # Step b. Create dataframe corresponding to peaks data, whereas:
+  # Step 2: Create dataframe corresponding to peaks data, whereas:
   # a) marker id, NAD region id
   # b) start, mid, end positions for markers
   # c) positions for NAD regions
@@ -369,7 +402,7 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
                                     'start.marker.bp', 'start.trait.bp',
                                     'end.marker.bp', 'end.trait.bp')
   
-  # Step c (OPTIONAL, only for the approach with overall positions, not for each chromosome)
+  # Step 3: (OPTIONAL, only for the approach with overall positions, not for each chromosome)
   #         calculate the adding value for each chromosome position
   add_chromosome_bp <- rep(0,5) 
   for (i in 2:5) #start with 2nd chromosome
@@ -378,7 +411,7 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
     add_chromosome_bp[i] <- sum(chromosome_info_i)
   }
   
-  # Step d. Fill the data for peaks_NAD_data
+  # Step 4: Fill the data for peaks_NAD_data
   for (ind in 1:dim(peaks_NAD_data)[1])
   {
     peaks_NAD_data_new$marker.id[ind] <- peaks_NAD_data$nearest.marker[ind] #marker ID
@@ -403,7 +436,7 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
   peaks_NAD_data_new$mid.marker.bp <- 0.5*(peaks_NAD_data_new$start.marker.bp + peaks_NAD_data_new$end.marker.bp)
   peaks_NAD_data_new$mid.trait.bp <- 0.5*(peaks_NAD_data_new$start.trait.bp + peaks_NAD_data_new$end.trait.bp)
   
-  # Step e. Pericentrometric regions real value by adding the corresponding bp for each chromosome to make it real bp position
+  # Step 5: Pericentrometric regions real value by adding the corresponding bp for each chromosome to make it real bp position
   pericentrometric_info_bp <- data.frame(chr.trait = pericentrometric_info$chr,
                                          chr.marker = pericentrometric_info$chr,
                                          start = add_chromosome_bp + pericentrometric_info$start,
@@ -412,7 +445,7 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
                                   add.y = max(add_chromosome_bp),
                                   chr.marker = seq(1,5))
   
-  # Step f. To fix the problems with y scale: make it in Mbp
+  # Step 6: To fix the problems with y scale: make it in Mbp
   # x/y ticks for each chromosome
   scale_mbp_ticks <- c(0, 
                        30.42,
@@ -433,7 +466,7 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
     chromosome_info_bp$x[element] <- sum(chromosome_info_bp_element)
   }
   
-  # Step g Make the plot using ggplot2 envo
+  # Step 7: Make the plot using ggplot2 envo
   tclog_nm <- ggplot(data = peaks_NAD_data_new) +
     geom_point(aes(x=mid.marker.bp, y=mid.trait.bp)) + #scatterplot of mid-val marker (bp) and trait (Mbp)
     geom_point(data = chromosome_info_bp, aes(x = x, y = 0), color = 'white') +
