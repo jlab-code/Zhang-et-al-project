@@ -23,6 +23,12 @@ source('functions/qtl-functions.R')
 ## Demo
 examplary_run.R file presents the demo of running the pipeline for toy datasets located in toy_dataset directory (containing phenotype.csv, genotype.csv, positions.csv and marker.csv files).
 
+To run the demo file, use the R (RStudio is recommended), change the first row of the script by typing your working directory where you have placed all the files from this repository, eg:
+```
+setwd('/home/robert/Zhang-et-al-project')
+```
+and run the script in R console.
+
 The expected output is located in toy_outputs and it consists of the following files:
 
 • PERM-all-traits_log_nm.Rdata - Rbinary dataset with the results from permutation test performed by rqtl package;
