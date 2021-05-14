@@ -21,8 +21,26 @@ source('functions/qtl-functions.R')
 ```
 
 ## Demo
-examplary_run.R file presents the demo of running the pipeline for toy datasets located in toy_dataset directory (containing phenotype.csv, genotype.csv, positions.csv and marker.csv files)
-The expected output is located in toy_outputs.
+examplary_run.R file presents the demo of running the pipeline for toy datasets located in toy_dataset directory (containing phenotype.csv, genotype.csv, positions.csv and marker.csv files).
+
+The expected output is located in toy_outputs and it consists of the following files:
+
+• PERM-all-traits_log_nm.Rdata - Rbinary dataset with the results from permutation test performed by rqtl package;
+
+• QTL-direction-data-all-traits_log_nm.Rdata - Rbinary dataset with the effect direction for a given association (epimarker and phenotype);
+
+• QTL-mapping-all-traits_log_nm.Rdata - Rbinary dataset with the results from the mapping procedure performed by rqtl package;
+
+• REF-data-all-traits_log_nm.Rdata - Rbinary dataset with the crossing file used as the input for mapping procedure by rqtl package;
+
+• SCANPOSINFO-all-traits_log_nm.Rdata - Rbinary dataset with positions of the markers after mapping procedure;
+
+• gc_genotype_log_nm.csv - comma-separated csv file with the genotype data after preprocessing used for running the mapping procedure by rqtl package;
+
+• mp_traits_log_nm.csv - comma-separated csv file with the phenotype data after preprocessing used for running the mapping procedure by rqtl package;
+
+• info_peaks_log_nm.csv - comma-separated csv file with the positions of the peaks from mapping outputs.
+
 
 ## Instructions for use
 • Required input datasets:
