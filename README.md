@@ -66,6 +66,40 @@ For 20 phenotypic traits, the whole pipeline takes around 1 minute, whereas:
 ##### marker information dataset - directory to csv comma divided file with marker chromosome and start-end positions
 ##### positions_dir - directory to csv comma divided file with phenotype (epiRIL positions)
 
+• Useful commands:
+
+After collecting your datasets (make sure they have the same column names as in the toy datasets), load the required functions by using the following command:
+```
+library(data.table)
+library(qtl)
+library(dplyr)
+library(xlsx)
+library(stringr)
+library(ggplot2)
+library(reshape2)
+```
+and load the functions provided to this repository using:
+```
+source('functions/qtl-functions.R')
+```
+as the inputs you need to select your input/output directory and write down directories to your data, like below:
+```
+mp_traits_dir <- 'toy_dataset//phenotype.csv'
+gc_genotype_dir <- 'toy_dataset//genotype.csv'
+marker_dir  <- 'toy_dataset//markers.csv'
+positions_dir <- 'toy_dataset//positions.csv'
+output.dir <- 'examplary_outputs//'
+input.dir <- output.dir 
+```
+Then you can use the functions to run the pipeline:
+```
+mapping_qtl(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)  
+getQTLpeaks_new(input.dir, marker_dir)
+plot1 <- qtlpeaks.plot(input.dir, marker_dir)
+plot2 <- transcis.plot(input.dir, marker_dir, positions_dir)
+```
+By calling plot1 or plot2 in R with installed ggplot2 you can see your plots.
+
 ## Functions overview
 ##### mapping_qtl function (required datasets: mp_traits_dir, gc_genotype_dir, marker_dir)
 mapping_qtl - perform preprocessing of the data (based on the log transformation and preparing datasets for QTL analysis)
