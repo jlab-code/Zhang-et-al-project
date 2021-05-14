@@ -53,7 +53,9 @@ The expected output is located in toy_outputs and it consists of the following f
 For 20 phenotypic traits, the whole pipeline takes around 1 minute, whereas:
 
 • Running a mapping_qtl function could take 2 seconds per one trait (40 seconds for toy datasets);
-• Running a getQTLpeaks_new function could take less than 1 second per one trait (40 seconds for toy datasets);
+
+• Running a getQTLpeaks_new function could take less than 1 second per one trait (10 seconds for toy datasets);
+
 • Running a qtlpeaks.plot and transcis.plot functions could take no longer than 10 seconds in total.
 
 
