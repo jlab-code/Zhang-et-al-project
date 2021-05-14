@@ -1,9 +1,18 @@
 # Zhang-et-al-project
-Mapping meQTL-epi in ddm1-derived epiRILs
+Mapping meQTL-epi in ddm1-derived epiRILs in four-step QTL analysis 
 
-Four steps for QTL analysis 
+## System requirements
+• R version 4.0.2 with the following installed packages: data.table, qtl, dplyr, xlsx, stringr, ggplot2, reshape2
+• Sufficient amount of RAM memory to run the QTL analysis (recommended minimum is 8 GB)
+• The administrative privileges are required to install and run R‑Studio utilities.
+• A network connection for data recovering over network.
 
-###########################################################################
+## Installation
+To install the required packages type the following command in the R console.
+```
+install.packages(c('data.table', 'qtl', 'dplyr', 'xlsx', 'stringr', 'ggplot2', 'reshape2'))
+```
+To load the provided functions use load command in the R console.
 
 Required input datasets
 mp_traits_dir - directory to csv comma divided file with quantitative traits for each line and phenotype
