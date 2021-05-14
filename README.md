@@ -3,8 +3,11 @@ Mapping meQTL-epi in ddm1-derived epiRILs in four-step QTL analysis
 
 ## System requirements
 • R version 4.0.2 with the following installed packages: data.table, qtl, dplyr, xlsx, stringr, ggplot2, reshape2
+
 • Sufficient amount of RAM memory to run the QTL analysis (recommended minimum is 8 GB)
+
 • The administrative privileges are required to install and run R‑Studio utilities.
+
 • A network connection for data recovering over network.
 
 ## Installation
