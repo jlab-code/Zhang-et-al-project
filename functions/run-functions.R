@@ -35,8 +35,8 @@ marker_dir <- 'mapping_marker_sets/markers_new.csv'
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
-# Step 5: Perform getQTLpeaks functions to have the set of the QTL peaks with the given alpha levelfrom mapping for further steps
-getQTLpeaks(input.dir = input.dir, marker_dir)
+# Step 5: Perform getQTLpeaks_new functions to have the set of the QTL peaks with the given alpha levelfrom mapping for further steps
+getQTLpeaks_new(input.dir = input.dir, marker_dir)
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------

@@ -187,14 +187,15 @@ mapping_qtl <- function(mp_traits_dir, gc_genotype_dir, marker_dir, output.dir)
 
 ##### getQTLpeaks_new function #####
 # getQTLpeaks_new - select a significant peaks with a given alpha level
-getQTLpeaks_new<-function(input.dir, alpha = 0.05)
+getQTLpeaks_new<-function(input.dir, marker_dir, alpha = 0.05)
 {
   # Step 1: Read required dataset for reference genome, permutation data, mapping data, marker positions and effect direcion
   ref.data<-dget(paste(input.dir, "REF-data-all-traits_log_nm.Rdata", sep="")) #the traits were inputted incorrectly
   perm.data<-dget(paste(input.dir, "PERM-all-traits_log_nm.Rdata", sep="")) #permutation results dataframe
   qtl.data<-dget(paste(input.dir, "QTL-mapping-all-traits_log_nm.Rdata", sep="")) #mapping results dataframe
-  marker.pos<-read.csv(paste(input.dir, marker_dir, sep = ""), header=T) #marker positions dataset
   qtl.direction<-dget(paste(input.dir, "QTL-direction-data-all-traits_log_nm.Rdata", sep="")) #effect direction dataset
+  
+  marker.pos<-read.csv(paste(marker_dir, sep = ""), header=T) #marker positions dataset
   
   # Step 2: Select permutation threshold for each trait separately
   perm.thresh<-summary(perm.data, alpha=alpha)
@@ -257,6 +258,7 @@ getQTLpeaks_new<-function(input.dir, alpha = 0.05)
     peaks.new$CI.upper.cM[e]<-int.temp[3,2]
   }
   colnames(peaks.new)[4]<-"pos.cM"
+  fwrite(peaks.new, file = paste(input.dir, 'info_peaks_log_nm.csv', sep = ""))
   return(peaks.new)
 }
 
@@ -378,8 +380,8 @@ transcis.plot <- function(input.dir, marker_dir, positions_dir)
   for (element in 1:dim(positions_NAD_data)[1])
   {
     ID_element <- positions_NAD_data$ID[element]
-    positions_NAD_data$seqnames[element] <- phenotype_positions$chr[which(phenotype_positions$Geneid == ID_element)]
-    positions_NAD_data$position[element] <- 0.5*(phenotype_positions$start[which(phenotype_positions$Geneid == ID_element)] + phenotype_positions$end[which(phenotype_positions$Geneid == ID_element)])
+    positions_NAD_data$seqnames[element] <- phenotype_positions$chr[which(phenotype_positions$trait == ID_element)]
+    positions_NAD_data$position[element] <- 0.5*(phenotype_positions$start[which(phenotype_positions$trait == ID_element)] + phenotype_positions$end[which(phenotype_positions$trait == ID_element)])
   }
   #information about start-end positions for each chromosome
   chromosome_info <- data.frame(chr = seq(1,5),
