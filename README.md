@@ -1,4 +1,5 @@
-# QTL-analysis-arabidopsis
+# Zhang-et-al-project
+Mapping meQTL-epi in ddm1-derivied epiRILs
 Four step complex analysis with plotting the results
 
 ###########################################################################
